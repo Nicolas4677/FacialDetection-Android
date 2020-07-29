@@ -29,12 +29,12 @@ class MainActivity : AppCompatActivity() {
                 options.inMutable = true
                 val myBitmap = BitmapFactory.decodeResource(
                     applicationContext.resources,
-                    R.drawable.test2,
+                    R.drawable.test1,
                     options
                 )
 
                 val myRectPaint = Paint()
-                myRectPaint.strokeWidth = 5f
+                myRectPaint.strokeWidth = 10f
                 myRectPaint.color = Color.RED
                 myRectPaint.style = Paint.Style.STROKE
 
@@ -49,7 +49,9 @@ class MainActivity : AppCompatActivity() {
 
                 //Tracking enabled when using video
                 val faceDetector: FaceDetector =
-                    FaceDetector.Builder(applicationContext).setTrackingEnabled(false)
+                    FaceDetector.Builder(applicationContext)
+                        .setTrackingEnabled(false)
+                        .setLandmarkType(FaceDetector.ALL_LANDMARKS)
                         .build()
                 if (!faceDetector.isOperational) {
                     AlertDialog.Builder(v.context).setMessage("Could not set up the face detector!").show()
@@ -60,17 +62,36 @@ class MainActivity : AppCompatActivity() {
                 val faces: SparseArray<Face> = faceDetector.detect(frame)
 
 
+
                 for (i in 0 until faces.size()) {
 
-                    val thisFace = faces.valueAt(i)
-                    val x1 = thisFace.position.x
-                    val y1 = thisFace.position.y
-                    val x2 = x1 + thisFace.width
-                    val y2 = y1 + thisFace.height
-                    tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 2f, 2f, myRectPaint)
+                    val face = faces.valueAt(i)
+
+                    var landmarks = face.landmarks
+
+                    for(i in 0 until 2)
+                    {
+                        val landmark = landmarks[i];
+                        var position: PointF = landmark.position
+                        tempCanvas.drawCircle(position.x, position.y, 15f, myRectPaint)
+                    }
+
+                    val mouthLeft = landmarks[5].position;
+                    val mouthRight = landmarks[6].position;
+                    val mouthMiddle = landmarks[7].position;
+
+                    tempCanvas.drawLine(mouthLeft.x, mouthLeft.y, mouthRight.x, mouthRight.y, myRectPaint)
+                    tempCanvas.drawLine(mouthRight.x, mouthRight.y, mouthMiddle.x, mouthMiddle.y, myRectPaint)
+                    tempCanvas.drawLine(mouthMiddle.x, mouthMiddle.y, mouthLeft.x, mouthLeft.y, myRectPaint)
                 }
                 myImageView.setImageDrawable(BitmapDrawable(resources, tempBitmap))
             }
         })
     }
 }
+
+//ORDER OF LANDMARKS
+// 0 and 1 are the eyes (0 being right eye and 1 being left eye)
+// 2 being the nose
+// 3 and 4 being the cheeks (3 being left cheek and 4 being right cheek)
+// 5, 6, and 7 (being respectively mouth left side, mouth right side, and mouth middle bottom
