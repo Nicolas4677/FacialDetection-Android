@@ -61,8 +61,6 @@ class MainActivity : AppCompatActivity() {
                 val frame: Frame = Frame.Builder().setBitmap(myBitmap).build()
                 val faces: SparseArray<Face> = faceDetector.detect(frame)
 
-
-
                 for (i in 0 until faces.size()) {
 
                     val face = faces.valueAt(i)
@@ -90,7 +88,9 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-//ORDER OF LANDMARKS
+//TODO: Change API to MLKit from https://developers.google.com/ml-kit
+
+//ORDER OF FACIAL LANDMARKS
 // 0 and 1 are the eyes (0 being right eye and 1 being left eye)
 // 2 being the nose
 // 3 and 4 being the cheeks (3 being left cheek and 4 being right cheek)
