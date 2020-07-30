@@ -16,10 +16,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--For the MLKit API-->
+        <!--Add this when using the MLKit from Google Play Services-->
+        <!--<meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="face" />-->
+
     </application>
 
-    <meta-data
+    <!--For the Vision Mobile API-->
+    <!--<meta-data
         android:name="com.google.android.gms.vision.DEPENDENCIES"
-        android:value="face" />
+        android:value="face" />-->
 
 </manifest>
