@@ -46,7 +46,7 @@ class FaceDrawer(private val face : Face, private val canvas: Canvas,
         }
     }
 
-    // * Draws all landmarks, you can pass Bitmaps for specific type of landmarks.
+    // * Draws all landmarks. You can pass Bitmaps for specific type of landmarks.
     // * Set drawNull Boolean as null if you want to ignore specific landmarks, you'll...
     //   ... also need to pass that landmark Bitmap as null.
     // * This method excludes the mouth because the mouth will depend on how the...

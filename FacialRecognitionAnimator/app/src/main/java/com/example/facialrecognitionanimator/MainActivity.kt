@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
                 canvas.drawBitmap(imageBitmap, 0f, 0f, null)
 
                 var faceDetectorOptions = FaceDetectorOptions.Builder()
-                    .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+                    .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                     .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
                     .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
                     .build()
