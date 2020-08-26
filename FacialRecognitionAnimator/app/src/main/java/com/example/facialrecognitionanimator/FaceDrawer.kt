@@ -5,66 +5,76 @@ package com.example.facialrecognitionanimator
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import com.google.mlkit.vision.face.Face
-import com.google.mlkit.vision.face.FaceContour
-import com.google.mlkit.vision.face.FaceLandmark
+import android.graphics.PointF
 
-class FaceDrawer(private val face : Face, private val canvas: Canvas,
+class FaceDrawer(val faceHandler: FaceHandler, private val canvas: Canvas,
                  private val paint: Paint)
 {
-    // * Draws the specified landmark
-    fun drawFacialLandmark(facialLandmark: Int, bitmap : Bitmap? = null,
-                           drawNull : Boolean = true)
+    private val effectsList = mutableListOf<FaceEffect>()
+
+    /*
+     * Draws the specified landmark
+     */
+    fun drawFacialLandmark(facialLandmark: Int, bitmap : Bitmap? = null, offset : PointF = PointF())
     {
-        val landmark = face.getLandmark(facialLandmark)
+        val position = faceHandler.getLandmarkPosition(facialLandmark)
+        position.x += offset.x
+        position.y += offset.y
 
-        landmark?.let {
-            val position = landmark.position
-
-            if(bitmap != null)
-            {
-
-            }
-            else if(drawNull)
-            {
-                canvas.drawCircle(position.x, position.y, 10f, paint)
-            }
+        if(bitmap != null)
+        {
+            canvas.drawBitmap(bitmap, position.x, position.y, paint)
+        }
+        else
+        {
+            canvas.drawCircle(position.x, position.y, 10f, paint)
         }
     }
 
-    // * Draws all points from a specified contour.
-    fun drawFacialContour(faceContour: Int)
+    /*
+     * Draws all points from a specified contour
+     */
+    fun drawFacialContour(faceContour: Int, bitmap : Bitmap? = null)
     {
-        val contour = face.getContour(faceContour)
+        val points = faceHandler.getContourPoints(faceContour)
 
-        contour?.apply {
-
-            for (point in points)
+        for (point in points)
+        {
+            if(bitmap != null)
+            {
+                canvas.drawBitmap(bitmap, point.x, point.y, paint)
+            }
+            else
             {
                 canvas.drawCircle(point.x, point.y, 10f, paint)
             }
         }
     }
 
-    // * Draws all landmarks. You can pass Bitmaps for specific type of landmarks.
-    // * Set drawNull Boolean as null if you want to ignore specific landmarks, you'll...
-    //   ... also need to pass that landmark Bitmap as null.
-    // * This method excludes the mouth because the mouth will depend on how the...
-    //   ... developer wants to show it on the screen (mouth has three different landmarks).
-    fun drawCompleteFace(leftEye : Bitmap? = null,
-                         rightEye : Bitmap? = null,
-                         leftEar : Bitmap? = null,
-                         rightEar : Bitmap? = null,
-                         leftCheek : Bitmap? = null,
-                         rightCheek : Bitmap? = null,
-                         mouth : Bitmap? = null,
-                         drawNull: Boolean = true)
-    {
-        drawFacialLandmark(FaceLandmark.LEFT_EYE, leftEye, drawNull)
-        drawFacialLandmark(FaceLandmark.RIGHT_EYE, rightEye, drawNull)
-        drawFacialLandmark(FaceLandmark.LEFT_EAR, leftEar, drawNull)
-        drawFacialLandmark(FaceLandmark.RIGHT_EAR, rightEar, drawNull)
-        drawFacialLandmark(FaceLandmark.LEFT_CHEEK, leftCheek, drawNull)
-        drawFacialLandmark(FaceLandmark.RIGHT_CHEEK, rightCheek, drawNull)
+    /*
+     * Draws a bitmap in the canvas
+     */
+    fun drawSprite(bitmap: Bitmap, position : PointF) {
+
+        canvas.drawBitmap(bitmap, position.x, position.y, paint)
+    }
+
+    /*
+     * Adds effect to effects list
+     */
+    fun addEffect(effect : FaceEffect) {
+
+        effectsList.add(effect)
+    }
+
+    /*
+     * Applies all effects
+     */
+    fun applyEffects() {
+
+        for (effect in effectsList) {
+
+            effect.apply(this)
+        }
     }
 }
