@@ -9,13 +9,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.vision.face.Contour
+import com.google.android.gms.vision.face.Landmark
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.face.FaceLandmark
-
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,34 +26,61 @@ class MainActivity : AppCompatActivity() {
 
             override fun onClick(v : View) {
 
-                val bitmapOptions = BitmapFactory.Options();
-                bitmapOptions.inMutable = true
-
-                val imageBitmap = BitmapFactory.decodeResource(
-                    applicationContext.resources,
-                    R.drawable.test3,
-                    bitmapOptions)
-
+                //Setting up paint for drawing
                 val rectPaint = Paint()
                 rectPaint.strokeWidth = 15f
                 rectPaint.color = Color.RED
                 rectPaint.style = Paint.Style.STROKE
 
-                val canvas = Canvas(imageBitmap)
-                canvas.drawBitmap(imageBitmap, 0f, 0f, null)
+                val bitmapOptions = BitmapFactory.Options();
+                bitmapOptions.inMutable = true
 
-                var faceDetectorOptions = FaceDetectorOptions.Builder()
+                //Loading face bitmap that will be detected
+                val faceBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.test3,
+                    bitmapOptions)
+
+                //Loading and scaling moustache bitmap
+                val moustacheBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.mou1,
+                    bitmapOptions)
+                val scaledMoustache = Bitmap.createScaledBitmap(moustacheBitmap, 400, 200, false)
+
+                //Loading and scaling nose bitmap
+                val noseBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.nose,
+                    bitmapOptions)
+                val scaledNose = Bitmap.createScaledBitmap(noseBitmap, 200, 200, false)
+
+                //Loading and scaling eye bitmap
+                val eyeBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.eye,
+                    bitmapOptions)
+                val scaledEye = Bitmap.createScaledBitmap(eyeBitmap, 150, 150, false)
+
+                //Setting up face detection
+                val faceDetectorOptions = FaceDetectorOptions.Builder()
                     .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                     .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
                     .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
                     .build()
 
-                val inputImage = InputImage.fromBitmap(imageBitmap, 0)
-
                 val faceDetector = FaceDetection.getClient(faceDetectorOptions)
+
+                //Setting face bitmap as InputImage
+                val inputImage = InputImage.fromBitmap(faceBitmap, 0)
 
                 val result = faceDetector.process(inputImage)
                     .addOnSuccessListener { faces ->
+
+                        val finalBitmap = Bitmap.createBitmap(faceBitmap.width, faceBitmap.width, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(finalBitmap)
+
+                        canvas.drawBitmap(faceBitmap, 0f, 0f, rectPaint)
 
                         for(face in faces)
                         {
@@ -62,40 +88,28 @@ class MainActivity : AppCompatActivity() {
                             val rotY = face.headEulerAngleY
                             val rotZ = face.headEulerAngleZ
 
-                            val faceDrawer = FaceDrawer(face, canvas, rectPaint)
+                            val faceDrawer = FaceDrawer(FaceHandler(face), canvas, rectPaint)
 
-                            faceDrawer.drawCompleteFace()
+                            //Adding effects
+                            faceDrawer.addEffect(MoustacheEffect(scaledMoustache))
+                            faceDrawer.addEffect(NoseEffect(scaledNose))
+                            faceDrawer.addEffect(EyeEffect(scaledEye))
 
-                            rectPaint.color = Color.BLUE
-
-                            faceDrawer.drawFacialContour(FaceContour.FACE)
-                            faceDrawer.drawFacialContour(FaceContour.LEFT_EYE)
-                            faceDrawer.drawFacialContour(FaceContour.RIGHT_EYE)
-                            faceDrawer.drawFacialContour(FaceContour.LOWER_LIP_BOTTOM)
-                            faceDrawer.drawFacialContour(FaceContour.LOWER_LIP_TOP)
-                            faceDrawer.drawFacialContour(FaceContour.UPPER_LIP_BOTTOM)
-                            faceDrawer.drawFacialContour(FaceContour.UPPER_LIP_TOP)
+                            faceDrawer.applyEffects()
                         }
 
+                        //Showing final image
                         val imageView = findViewById<ImageView>(R.id.imgview)
-                        imageView.setImageDrawable(BitmapDrawable(resources, imageBitmap))
+                        imageView.setImageDrawable(BitmapDrawable(resources, finalBitmap))
+
+                        faceDetector.close()
                     }
                     .addOnFailureListener{ e ->
 
+
+                        faceDetector.close()
                     }
             }
         })
     }
 }
-
-//TODO: Change API to MLKit from https://developers.google.com/ml-kit
-//MLKit Vision API
-//To detect the contours of the face, MLKit requires an image of at least 200x200 Pixels.
-//Input image can be:  Bitmap, media.Image, ByteBuffer, byte array, or a file on the device.
-
-//Mobile Vision API
-//ORDER OF FACIAL LANDMARKS
-// 0 and 1 are the eyes (0 being right eye and 1 being left eye)
-// 2 being the nose
-// 3 and 4 being the cheeks (3 being left cheek and 4 being right cheek)
-// 5, 6, and 7 (being respectively mouth left side, mouth right side, and mouth middle bottom
