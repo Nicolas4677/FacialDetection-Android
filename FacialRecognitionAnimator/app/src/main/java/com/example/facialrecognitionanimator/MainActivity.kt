@@ -1,18 +1,20 @@
+// Copyright (C) 2020, Nicolas Morales Escobar. All rights reserved.
+
 package com.example.facialrecognitionanimator
 
-import android.app.AlertDialog
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import android.util.SparseArray
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.vision.Frame
-import com.google.android.gms.vision.face.Face
-import com.google.android.gms.vision.face.FaceDetector
-
+import com.google.android.gms.vision.face.Landmark
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceContour
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.face.FaceLandmark
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,52 +26,89 @@ class MainActivity : AppCompatActivity() {
 
             override fun onClick(v : View) {
 
-                val myImageView = findViewById<ImageView>(R.id.imgview)
-                val options = BitmapFactory.Options()
-                options.inMutable = true
-                val myBitmap = BitmapFactory.decodeResource(
+                //Setting up paint for drawing
+                val rectPaint = Paint()
+                rectPaint.strokeWidth = 15f
+                rectPaint.color = Color.RED
+                rectPaint.style = Paint.Style.STROKE
+
+                val bitmapOptions = BitmapFactory.Options();
+                bitmapOptions.inMutable = true
+
+                //Loading face bitmap that will be detected
+                val faceBitmap = BitmapFactory.decodeResource(
                     applicationContext.resources,
-                    R.drawable.test2,
-                    options
-                )
+                    R.drawable.test3,
+                    bitmapOptions)
 
-                val myRectPaint = Paint()
-                myRectPaint.strokeWidth = 5f
-                myRectPaint.color = Color.RED
-                myRectPaint.style = Paint.Style.STROKE
+                //Loading and scaling moustache bitmap
+                val moustacheBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.mou1,
+                    bitmapOptions)
+                val scaledMoustache = Bitmap.createScaledBitmap(moustacheBitmap, 400, 200, false)
 
-                val tempBitmap = Bitmap.createBitmap(
-                    myBitmap.width,
-                    myBitmap.height,
-                    Bitmap.Config.RGB_565
-                )
+                //Loading and scaling nose bitmap
+                val noseBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.nose,
+                    bitmapOptions)
+                val scaledNose = Bitmap.createScaledBitmap(noseBitmap, 200, 200, false)
 
-                val tempCanvas = Canvas(tempBitmap)
-                tempCanvas.drawBitmap(myBitmap, 0f, 0f, null)
+                //Loading and scaling eye bitmap
+                val eyeBitmap = BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.eye,
+                    bitmapOptions)
+                val scaledEye = Bitmap.createScaledBitmap(eyeBitmap, 150, 150, false)
 
-                //Tracking enabled when using video
-                val faceDetector: FaceDetector =
-                    FaceDetector.Builder(applicationContext).setTrackingEnabled(false)
-                        .build()
-                if (!faceDetector.isOperational) {
-                    AlertDialog.Builder(v.context).setMessage("Could not set up the face detector!").show()
-                    return
-                }
+                //Setting up face detection
+                val faceDetectorOptions = FaceDetectorOptions.Builder()
+                    .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+                    .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
+                    .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+                    .build()
 
-                val frame: Frame = Frame.Builder().setBitmap(myBitmap).build()
-                val faces: SparseArray<Face> = faceDetector.detect(frame)
+                val faceDetector = FaceDetection.getClient(faceDetectorOptions)
+
+                //Setting face bitmap as InputImage
+                val inputImage = InputImage.fromBitmap(faceBitmap, 0)
+
+                val result = faceDetector.process(inputImage)
+                    .addOnSuccessListener { faces ->
+
+                        val finalBitmap = Bitmap.createBitmap(faceBitmap.width, faceBitmap.width, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(finalBitmap)
+
+                        canvas.drawBitmap(faceBitmap, 0f, 0f, rectPaint)
+
+                        for(face in faces)
+                        {
+                            val bounds = face.boundingBox
+                            val rotY = face.headEulerAngleY
+                            val rotZ = face.headEulerAngleZ
+
+                            val faceDrawer = FaceDrawer(FaceHandler(face), canvas, rectPaint)
+
+                            //Adding effects
+                            faceDrawer.addEffect(MoustacheEffect(scaledMoustache))
+                            faceDrawer.addEffect(NoseEffect(scaledNose))
+                            faceDrawer.addEffect(EyeEffect(scaledEye))
+
+                            faceDrawer.applyEffects()
+                        }
+
+                        //Showing final image
+                        val imageView = findViewById<ImageView>(R.id.imgview)
+                        imageView.setImageDrawable(BitmapDrawable(resources, finalBitmap))
+
+                        faceDetector.close()
+                    }
+                    .addOnFailureListener{ e ->
 
 
-                for (i in 0 until faces.size()) {
-
-                    val thisFace = faces.valueAt(i)
-                    val x1 = thisFace.position.x
-                    val y1 = thisFace.position.y
-                    val x2 = x1 + thisFace.width
-                    val y2 = y1 + thisFace.height
-                    tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 2f, 2f, myRectPaint)
-                }
-                myImageView.setImageDrawable(BitmapDrawable(resources, tempBitmap))
+                        faceDetector.close()
+                    }
             }
         })
     }
